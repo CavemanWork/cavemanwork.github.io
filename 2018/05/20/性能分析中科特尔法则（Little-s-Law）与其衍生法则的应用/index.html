@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update: 20181112 科特尔法则 Little’s Law科特尔法则(Little’s Law)是John Little教授在1961证明并以他的名字命名的公式。Little’s Law是排队论中的重要公式，因现实世界中排队模型的应用非常广泛这也意味着此公式的应用也非常广泛。在性能分析中我们通过Little’s Law定位性能瓶颈，用模型预测随负载增加对业务性能的影响，以及通">
+<meta property="og:type" content="article">
+<meta property="og:title" content="性能分析中科特尔法则（Little&#39;s Law）与其衍生法则的应用">
+<meta property="og:url" content="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update: 20181112 科特尔法则 Little’s Law科特尔法则(Little’s Law)是John Little教授在1961证明并以他的名字命名的公式。Little’s Law是排队论中的重要公式，因现实世界中排队模型的应用非常广泛这也意味着此公式的应用也非常广泛。在性能分析中我们通过Little’s Law定位性能瓶颈，用模型预测随负载增加对业务性能的影响，以及通">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/queue_system.png">
+<meta property="og:image" content="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/little_law_proof.png">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.994Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="性能分析中科特尔法则（Little&#39;s Law）与其衍生法则的应用">
+<meta name="twitter:description" content="Last update: 20181112 科特尔法则 Little’s Law科特尔法则(Little’s Law)是John Little教授在1961证明并以他的名字命名的公式。Little’s Law是排队论中的重要公式，因现实世界中排队模型的应用非常广泛这也意味着此公式的应用也非常广泛。在性能分析中我们通过Little’s Law定位性能瓶颈，用模型预测随负载增加对业务性能的影响，以及通">
+<meta name="twitter:image" content="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/queue_system.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/"/>
+
+
+
+
+
+  <title>性能分析中科特尔法则（Little's Law）与其衍生法则的应用 | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">性能分析中科特尔法则（Little's Law）与其衍生法则的应用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-05-20T15:58:29+08:00">
+                2018-05-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update: 20181112</em></p>
+<h2 id="科特尔法则-Little’s-Law"><a href="#科特尔法则-Little’s-Law" class="headerlink" title="科特尔法则 Little’s Law"></a>科特尔法则 Little’s Law</h2><p>科特尔法则(Little’s Law)是John Little教授在1961证明并以他的名字命名的公式。Little’s Law是排队论中的重要公式，因现实世界中排队模型的应用非常广泛这也意味着此公式的应用也非常广泛。在性能分析中我们通过Little’s Law定位性能瓶颈，用模型预测随负载增加对业务性能的影响，以及通过容量规划提前为业务扩张做准备。在现实生活中凡是排队等待的情况都可以通过Little’s Law进行量化与优化（如银行，医院的排队取号）。</p>
+<p>Little’s Law通过一个简单的公式<strong>量化了吞吐率与服务时间及等待队列长度三者之间的关系</strong>，简单公式的背后隐藏着巨大的信息量。<br>本文以最简单的排队模型介绍Little’s Law，如下图所示：</p>
+<img src="/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/queue_system.png">
+<blockquote>
+<p>假设存在一个系统由单输入与单输出单元组成并且只有一个处理单元。当输入到系统中的请求速度快于处理单元处理速度时系统会出现排队等待情况。</p>
+</blockquote>
+<h3 id="Little’s-Law-公式"><a href="#Little’s-Law-公式" class="headerlink" title="Little’s Law 公式"></a>Little’s Law 公式</h3><p>$$L= λ * W$$</p>
+<blockquote>
+<p>队列中平均任务数 = 平均任务抵达率 * 平均任务处理时间(含队列等待时间)</p>
+</blockquote>
+<img src="/2018/05/20/性能分析中科特尔法则（Little-s-Law）与其衍生法则的应用/little_law_proof.png">
+<p>Little’s law中不太好理解的参数是<strong>队列中平均任务数</strong>，请参考上图中的绿色部分A(T)。<strong>A(T)为T观察时间范围内，已经入队到队列中的所有任务等待时间的总和，也可以理解为绿色部分的面积。</strong>当由n(t)导致的不规则绿色区域抹平成长方形时，设T为长方形的宽，队列中的平均任务数为高，则A(T) = T * 队列中平均任务数。设L(T) = A(T) / T，则L(T)等同于平均等待任务数（也称为平均队列长度）。</p>
+<p>公式注解：</p>
+<ul>
+<li>Little’s law的应用场景非常广泛，它既可以解释单一的系统部件（磁盘，CPU）也可以解释由多个子系统组成的复杂系统（网页界面响应时间）。</li>
+<li>当平均队列长度变大时请求抵达率也会随着变大。只有系统待要处理的任务变多时才有可能使系统以最高吞吐率模式工作并榨干硬件性能，但他的反面是系统中入队等待任务变多，如果这个任务是跟用户体验相关时会表现为操作响应时间的变长（参见下面的响应时间部分内容）。</li>
+<li>系统处理单元的平均服务时间变长时会导致等待队列的变长，优化等待队列长度的方向有：<ul>
+<li>缩短平均服务时间</li>
+<li>减少任务请求量</li>
+</ul>
+</li>
+<li>本文介绍的是单一处理模型，如涉及多个并行处理模型时优化方法不止上面两种。</li>
+</ul>
+<h2 id="Little’s-Law-衍生应用-Utilization-Law-使用率的计算"><a href="#Little’s-Law-衍生应用-Utilization-Law-使用率的计算" class="headerlink" title="Little’s Law 衍生应用 - Utilization Law 使用率的计算"></a>Little’s Law 衍生应用 - Utilization Law 使用率的计算</h2><h3 id="Utilization-Law-公式"><a href="#Utilization-Law-公式" class="headerlink" title="Utilization Law 公式"></a>Utilization Law 公式</h3><p>$$U = X * St$$</p>
+<blockquote>
+<p>使用率 = 吞吐率 * 服务处理时间</p>
+</blockquote>
+<p>当使用率不超过100%时Utlization law其实是little’s Law的一个变种，这种情况被称为<strong>Job flow balance（此时抵达率与吞吐率相同）</strong>。</p>
+<p>公式注解：</p>
+<ul>
+<li>吞吐率不变的情况下服务处理时间的提升导致使用率的提升。</li>
+<li>在使用率不变的前提下要使吞吐率上升需要缩短服务处理时间。</li>
+</ul>
+<p>在磁盘性能老化分析时有时候会遇到磁盘使用率变化不大但磁盘吞吐率反而降低了。这是因为老化（磁盘长时间使用后）后的磁盘可能会出现文件碎片化。在读取以碎片化形式存储在磁盘各个地方的文件时可能会加长磁盘寻道时间（物理磁头转动时间），这个操作会体现在磁盘服务处理时间上，通过公式可知此时磁盘使用率变化不大但因处理服务时间变长导致了吞吐率的下降。</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><ul>
+<li>性能优化属于工程领域，工程领域就需要通过量化方法评判优化结果的好与坏。</li>
+<li>在数据分析时除了通过简单美妙的公式描述关系之外还可以通过数据可视化方法得出”数据模式”上的新发现。人的大脑善于从图形化内容中找出相互间的关联性，这个优点也可以用于数据分析。</li>
+<li>通过现象看到本质，这应该是我们平时要锻炼的思维模式。 将本质转变成高度抽象的公式是不错的方法之一。</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://web.mit.edu/~sgraves/www/papers/Little%27s%20Law-Published.pdf" target="_blank" rel="noopener">http://web.mit.edu/~sgraves/www/papers/Little%27s%20Law-Published.pdf</a> //John D.C. Little 发表在MIT刊物上关于Little’s law的论文</li>
+<li><a href="https://en.wikipedia.org/wiki/John_Little_(academic" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/John_Little_(academic</a>) // John Little 介绍</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/18/CavemeWork-Analyzer中响应时间的表示方式/" rel="next" title="使用置信区间量化应用程序启动时间">
+                <i class="fa fa-chevron-left"></i> 使用置信区间量化应用程序启动时间
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/07/01/通过Responsive-Time-Law理解性能拐点-Knee-Of-The-Curve/" rel="prev" title="通过Responsive Time Law理解性能拐点(Knee Of The Curve)">
+                通过Responsive Time Law理解性能拐点(Knee Of The Curve) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#科特尔法则-Little’s-Law"><span class="nav-number">1.</span> <span class="nav-text">科特尔法则 Little’s Law</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Little’s-Law-公式"><span class="nav-number">1.1.</span> <span class="nav-text">Little’s Law 公式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Little’s-Law-衍生应用-Utilization-Law-使用率的计算"><span class="nav-number">2.</span> <span class="nav-text">Little’s Law 衍生应用 - Utilization Law 使用率的计算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Utilization-Law-公式"><span class="nav-number">2.1.</span> <span class="nav-text">Utilization Law 公式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#写在最后"><span class="nav-number">3.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

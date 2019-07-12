@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update: 20180828 什么是TimeSeries关联性分析（Correlation Analysis）假设有基于时间序列采集的两组同样大小的数据，关联性分析是指量化这两组数据间的关联程度。再次强调一下，本文中讨论的关联性分析是针对TimeSeries数据类型的，在自然语言处理中用到的关联性分析方法是基于信息熵，与文本中讨论的方法不相同，虽然他们都属于关联性分析。  如果数据A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TimeSeries关联性分析的应用">
+<meta property="og:url" content="http://caveman.work/2018/08/17/CorrelationAnalysis/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update: 20180828 什么是TimeSeries关联性分析（Correlation Analysis）假设有基于时间序列采集的两组同样大小的数据，关联性分析是指量化这两组数据间的关联程度。再次强调一下，本文中讨论的关联性分析是针对TimeSeries数据类型的，在自然语言处理中用到的关联性分析方法是基于信息熵，与文本中讨论的方法不相同，虽然他们都属于关联性分析。  如果数据A">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/Pearson_Formula.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/Spearman_Formula.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/PCC_vs_SCC.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/NCC_Formula.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/NCC_performance.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/MemFree_MemCached.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/MemBuffers_MemCached.png">
+<meta property="og:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/UXFrameDrop_MemoryFree.png">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TimeSeries关联性分析的应用">
+<meta name="twitter:description" content="Last update: 20180828 什么是TimeSeries关联性分析（Correlation Analysis）假设有基于时间序列采集的两组同样大小的数据，关联性分析是指量化这两组数据间的关联程度。再次强调一下，本文中讨论的关联性分析是针对TimeSeries数据类型的，在自然语言处理中用到的关联性分析方法是基于信息熵，与文本中讨论的方法不相同，虽然他们都属于关联性分析。  如果数据A">
+<meta name="twitter:image" content="http://caveman.work/2018/08/17/CorrelationAnalysis/Pearson_Formula.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2018/08/17/CorrelationAnalysis/"/>
+
+
+
+
+
+  <title>TimeSeries关联性分析的应用 | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2018/08/17/CorrelationAnalysis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TimeSeries关联性分析的应用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-17T16:31:37+08:00">
+                2018-08-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update: 20180828</em></p>
+<h2 id="什么是TimeSeries关联性分析（Correlation-Analysis）"><a href="#什么是TimeSeries关联性分析（Correlation-Analysis）" class="headerlink" title="什么是TimeSeries关联性分析（Correlation Analysis）"></a>什么是TimeSeries关联性分析（Correlation Analysis）</h2><p>假设有基于时间序列采集的两组同样大小的数据，关联性分析是指<strong>量化这两组数据间的关联程度</strong>。再次强调一下，本文中讨论的关联性分析是针对TimeSeries数据类型的，在自然语言处理中用到的关联性分析方法是基于信息熵，与文本中讨论的方法不相同，虽然他们都属于关联性分析。</p>
+<ul>
+<li>如果数据A上涨时，数据B上涨（同样适应于下跌的情况）则说明这两组数据有关联性，表示为正向关联。 </li>
+<li>如果数据A上涨时，数据B下跌则说明这两组数据有关联性，表示为反向关联。</li>
+<li>关联程度取决于两组数据间的变化幅度。</li>
+</ul>
+<h2 id="为什么要做关联性分析"><a href="#为什么要做关联性分析" class="headerlink" title="为什么要做关联性分析"></a>为什么要做关联性分析</h2><p>包括但不限于：</p>
+<ul>
+<li>使用聚类算法定位性能瓶颈。</li>
+<li>结合数据可视化，进行信息挖掘。</li>
+<li>根因分析。</li>
+</ul>
+<p>实践中比较实用的用法是分析某个指标的变动会引起哪类其他指标的变动。比如可以回答如下问题：</p>
+<ul>
+<li>Memory Cached与Memory Free间是什么关系？关联程度如何？</li>
+<li>IO WriteBack频繁程度与哪种指标有关联？</li>
+</ul>
+<p>在设计系统资源调度策略与参数配置上，这类信息有助于系统最优设计。当优化某个关键指标时，需要查看与其关联的其他指标以确保不会出现指标失衡情况（改善一个指标时导致另一个指标的恶化）。通过此方法还可以分析出设备的硬件配置在运行用户负载程序时它的主要瓶颈是什么，针对不同资源瓶颈，配置不同的资源调度参数以实现能效的最优化。</p>
+<h2 id="常用算法之-Pearson-Correlation-Coefficient"><a href="#常用算法之-Pearson-Correlation-Coefficient" class="headerlink" title="常用算法之 - Pearson Correlation Coefficient"></a>常用算法之 - Pearson Correlation Coefficient</h2><p>公式 - 来自Wikipedia<br><img src="/2018/08/17/CorrelationAnalysis/Pearson_Formula.png"></p>
+<ul>
+<li>Python Code:  Scipy.stats.pearson()</li>
+<li>取值范围: [-1.0 ~ 1.0]</li>
+</ul>
+<p>使用Pearson时的注意点如下：</p>
+<ul>
+<li>函数结果的绝对值越接近1.0则关联性越强，越趋近于0.0则表明没有关联性。</li>
+<li>两组数据间需要有独立性。</li>
+<li>样本间需要有线性关系。</li>
+</ul>
+<h2 id="常用算法之-Spearman-Rank-Correlation-Coefficient"><a href="#常用算法之-Spearman-Rank-Correlation-Coefficient" class="headerlink" title="常用算法之 - Spearman Rank Correlation Coefficient"></a>常用算法之 - Spearman Rank Correlation Coefficient</h2><p>公式 - 来自Wikipedia<br><img src="/2018/08/17/CorrelationAnalysis/Spearman_Formula.png"></p>
+<ul>
+<li>Python Code: Scipy.stats.spearmanr() </li>
+<li>取值范围: [-1.0 ~ 1.0]</li>
+</ul>
+<p>使用Spearman时的注意点如下：</p>
+<ul>
+<li>函数结果的绝对值越接近1.0则关联性越强，越趋近于0.0则表明没有关联性。</li>
+<li>两组数据间需要有独立性。</li>
+<li>样本间不止线性关系，满足单调关系时也适用。</li>
+</ul>
+<p>不过从实际表现来看，Pearson与Spearman不需要严格的遵从关系函数（线性，单调）。<br><img src="/2018/08/17/CorrelationAnalysis/PCC_vs_SCC.png"></p>
+<h2 id="常用算法之-Normalized-Cross-Correlation"><a href="#常用算法之-Normalized-Cross-Correlation" class="headerlink" title="常用算法之 - Normalized Cross-Correlation"></a>常用算法之 - Normalized Cross-Correlation</h2><p>公式 - 来自Anomaly.io<br><img src="/2018/08/17/CorrelationAnalysis/NCC_Formula.png"></p>
+<ul>
+<li>函数结果的绝对值越接近1.0则关联性越强，越趋近于0.0则表明没有关联性。</li>
+<li>抗异常值的干扰能力较强，这也意味着肉眼上看不是很明显的关联关系使用NCC计算时得分是比较高的。</li>
+<li>NCC适合量化两组数据间的数值上的浮动程度（波动）。</li>
+</ul>
+<img src="/2018/08/17/CorrelationAnalysis/NCC_performance.png">
+<p>从PCC与SCC的结果上看两组数据没有明显的关联性，但从NCC上看是有较强关系的。从肉眼上分析，两组数据间有较强的”贴合”关系，但不具备明显的关联性关系。</p>
+<h2 id="两种关系"><a href="#两种关系" class="headerlink" title="两种关系"></a>两种关系</h2><p>将不同指标间的关联性属性划分为：</p>
+<ul>
+<li>直接关系（Direct Correlation）</li>
+<li>间接关系（Indirect Correlation）</li>
+</ul>
+<p>直接关系是指两个metric间有正向关联或反向关联，总之是有某种的直接关联。间接关系是指两个metric间通过某种逻辑关系关联在一起且数值的变化可能不是实时的，会有一段时间的延迟。需要特殊说明的是，严格意义上来说在一个系统中的任意两个指标都会有关联关系，区别在于关联关系强弱与时效性。</p>
+<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><p>Memory Free与Memory Cached间的对比<br><img src="/2018/08/17/CorrelationAnalysis/MemFree_MemCached.png"></p>
+<ul>
+<li>NCC较高但Pearson与Spearman给出的低分来看，这两个指标在这段时间内属于间接关联。</li>
+<li>从free与cached回收原理上看，两个虽然有关系但并不是直接关系。这个依赖具体的PageCache 与Memory Reclaim算法。</li>
+</ul>
+<p>Memory Buffers与Memory Cached间的对比<br><img src="/2018/08/17/CorrelationAnalysis/MemBuffers_MemCached.png"></p>
+<ul>
+<li>Pearson与Spearman都给出0.5以上的分，说明两者有一些直接关系，只是强度不是很大。</li>
+<li>从buffers与cached回收原理上看，两者其实都算是PageCache缓存。当遇到内存吃紧，IO 回写情景时两个buffer都会受到影响。</li>
+</ul>
+<p>Memory Free与 UX FrameDrop间的对比<br><img src="/2018/08/17/CorrelationAnalysis/UXFrameDrop_MemoryFree.png"></p>
+<ul>
+<li>Pearson与Spearman给出的分数来看，两个指标属于间接关系。</li>
+<li>从原理上看低内存有可能会引起前台UX应用的卡顿，但这两者间并不具备直接关系。</li>
+</ul>
+<p>这里只给出了某个设备在某个时段的信息，而且还只是某个特定UX应用的关联性分析。在实际中，不同UX应用针对不同的metric间的关联性是不同的。比如有些应用是Memory sensitive，而有些是IO sensitive。只有经过大量数据（不同时段）的计算后才能给出较为准确的结论。</p>
+<h2 id="其他常见的关联性分析算法，根据特性适用于不同领域。"><a href="#其他常见的关联性分析算法，根据特性适用于不同领域。" class="headerlink" title="其他常见的关联性分析算法，根据特性适用于不同领域。"></a>其他常见的关联性分析算法，根据特性适用于不同领域。</h2><ul>
+<li>Apriori/FP Growth(Tree): 经典的超市关联分析中用到的算法。在多个异常指标的聚类时，也可以用此算法做初步筛查。</li>
+<li>Canonical Correlation Analysis </li>
+<li>Maximum Information Coeffcient</li>
+<li>Kendall Correlation Coefficient</li>
+<li>Euclidean distance</li>
+<li>Mutual Information</li>
+</ul>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><ul>
+<li>这个世界很复杂，无法用一个指标或者量化方法理解所有现象。</li>
+<li>使用指标时应根据现实数据情况采用不同的量化指标。</li>
+<li>先采用数据可视化的方式观察下数据间的大致关系，之后根据其结果选择合适的量化指标。</li>
+<li>数据可视化工具中可以同时展示关联性指标的计算结果，有助于数据解读。</li>
+</ul>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ul>
+<li><a href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Pearson_correlation_coefficient</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient</a></li>
+<li><a href="https://anomaly.io/understand-auto-cross-correlation-normalized-shift/" target="_blank" rel="noopener">https://anomaly.io/understand-auto-cross-correlation-normalized-shift/</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/25/应用程序界面流畅度的量化方法与应用/" rel="next" title="应用程序界面流畅度的量化方法与应用">
+                <i class="fa fa-chevron-left"></i> 应用程序界面流畅度的量化方法与应用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/10/06/Android-UX-performance-check-list/" rel="prev" title="Android UX performance check list">
+                Android UX performance check list <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是TimeSeries关联性分析（Correlation-Analysis）"><span class="nav-number">1.</span> <span class="nav-text">什么是TimeSeries关联性分析（Correlation Analysis）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么要做关联性分析"><span class="nav-number">2.</span> <span class="nav-text">为什么要做关联性分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用算法之-Pearson-Correlation-Coefficient"><span class="nav-number">3.</span> <span class="nav-text">常用算法之 - Pearson Correlation Coefficient</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用算法之-Spearman-Rank-Correlation-Coefficient"><span class="nav-number">4.</span> <span class="nav-text">常用算法之 - Spearman Rank Correlation Coefficient</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用算法之-Normalized-Cross-Correlation"><span class="nav-number">5.</span> <span class="nav-text">常用算法之 - Normalized Cross-Correlation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#两种关系"><span class="nav-number">6.</span> <span class="nav-text">两种关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例分析"><span class="nav-number">7.</span> <span class="nav-text">案例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他常见的关联性分析算法，根据特性适用于不同领域。"><span class="nav-number">8.</span> <span class="nav-text">其他常见的关联性分析算法，根据特性适用于不同领域。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#写在最后"><span class="nav-number">9.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Reference"><span class="nav-number">10.</span> <span class="nav-text">Reference</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

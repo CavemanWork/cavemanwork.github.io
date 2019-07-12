@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update: 20181213 之前在博文性能分析中科特尔法则（Little’s Law）与其衍生法则的应用有介绍过Little’s law合它的简单证明过程，但此文中并没有给出相应的应用实例。 本文通过以Little’s law角度解读iostat命令输出的avgqu-sz指标。 查看平均队列长度最简单的方法是通过命令 iostat -x 1 以每隔一秒一次输出队列长度，如下图所示。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="以Little&#39;s Law角度解读iostat输出的avgqu-sz(平均队列长度)">
+<meta property="og:url" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update: 20181213 之前在博文性能分析中科特尔法则（Little’s Law）与其衍生法则的应用有介绍过Little’s law合它的简单证明过程，但此文中并没有给出相应的应用实例。 本文通过以Little’s law角度解读iostat命令输出的avgqu-sz指标。 查看平均队列长度最简单的方法是通过命令 iostat -x 1 以每隔一秒一次输出队列长度，如下图所示。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/iostat_output.png">
+<meta property="og:image" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/little_law_proof.png">
+<meta property="og:image" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/part_round_stats.png">
+<meta property="og:image" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/part_in_flight.png">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.991Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="以Little&#39;s Law角度解读iostat输出的avgqu-sz(平均队列长度)">
+<meta name="twitter:description" content="Last update: 20181213 之前在博文性能分析中科特尔法则（Little’s Law）与其衍生法则的应用有介绍过Little’s law合它的简单证明过程，但此文中并没有给出相应的应用实例。 本文通过以Little’s law角度解读iostat命令输出的avgqu-sz指标。 查看平均队列长度最简单的方法是通过命令 iostat -x 1 以每隔一秒一次输出队列长度，如下图所示。">
+<meta name="twitter:image" content="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/iostat_output.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/"/>
+
+
+
+
+
+  <title>以Little's Law角度解读iostat输出的avgqu-sz(平均队列长度) | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">以Little's Law角度解读iostat输出的avgqu-sz(平均队列长度)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-11-13T20:13:46+08:00">
+                2018-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update: 20181213</em></p>
+<p>之前在博文<a href="http://www.caveman.work/2018/05/20/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%AD%E7%A7%91%E7%89%B9%E5%B0%94%E6%B3%95%E5%88%99%EF%BC%88Little-s-Law%EF%BC%89%E4%B8%8E%E5%85%B6%E8%A1%8D%E7%94%9F%E6%B3%95%E5%88%99%E7%9A%84%E5%BA%94%E7%94%A8/" target="_blank" rel="noopener">性能分析中科特尔法则（Little’s Law）与其衍生法则的应用</a>有介绍过Little’s law合它的简单证明过程，但此文中并没有给出相应的应用实例。 本文通过以Little’s law角度解读iostat命令输出的avgqu-sz指标。</p>
+<h2 id="查看平均队列长度"><a href="#查看平均队列长度" class="headerlink" title="查看平均队列长度"></a>查看平均队列长度</h2><p>最简单的方法是通过命令 iostat -x 1 以每隔一秒一次输出队列长度，如下图所示。<br><img src="/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/iostat_output.png"></p>
+<p>红框所示的avgqu-sz就是平均队列长度了，这里直接引用博文 <a href="http://bean-li.github.io/dive-into-iostat/" target="_blank" rel="noopener">http://bean-li.github.io/dive-into-iostat/</a><br>中给出的计算方法。</p>
+<blockquote>
+<p>我们换一种思路来考虑，即diskstats中time_in_queue的思路。<br>当第一个IO完成的时候，队列中250个IO，250个IO都等了4ms，即time_in_queue + = (250<em>4) ，当第二个IO完成的时候，time_in_queue += (249</em>4)，当所有IO都完成的时候，time_in_queue = 4*(250+249+248….+1)， …<br>根据time_in_queue/1000,殊途同归地获得了平均队列长度。</p>
+</blockquote>
+<p>第一次读到这段解释时似懂非懂，后来想起来在证明Little’s Law的过程中曾使用面积的来替代队列中的总等待时间并除以观察时间得出平均队列长度。通过这个方法来理解iostat的计算队列长度会简单得多，而且有利于加深对Little’s Law的理解。</p>
+<h2 id="借用Little’s-Law的证明思路"><a href="#借用Little’s-Law的证明思路" class="headerlink" title="借用Little’s Law的证明思路"></a>借用Little’s Law的证明思路</h2><p>我们回顾下Little’s law的证明过程，</p>
+<blockquote>
+<img src="/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/little_law_proof.png">
+<p>Little’s law中不太好理解的参数是<strong>队列中平均任务数</strong>，请参考上图中的绿色部分A(T)。<strong>A(T)为T观察时间范围内，已经入队到队列中的所有任务等待时间的总和，也可以理解为绿色部分的面积。</strong>当由n(t)导致的不规则绿色区域抹平成长方形时，设T为长方形的宽，队列中的平均任务数为高，则A(T) = T * 队列中平均任务数。设L(T) = A(T) / T，则L(T)等同于平均等待任务数（也称为平均队列长度）。</p>
+</blockquote>
+<p>上面一段是博文”性能分析中科特尔法则（Little’s Law）与其衍生法则的应用”的片段。由于观察范围时间T可以由我们指定，那我们需要计算出绿色区域面积就可以得出平均队列长度。</p>
+<p>那问题变成了我们怎么能获取队列中的所有任务的等待时间呢？<br>在Linux 内核（以4.4版本为例）中有如下代码，它在每次关键IO事件时会被调用。<br><img src="/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/part_round_stats.png"><br>其中time_in_queue就等同于上面所说的”入队到队列中的所有任务等待时间的总和”。<br>每当发生以下几个IO事件时会触发IO统计，也就是调用part_round_stats_single()。</p>
+<ul>
+<li>当有新的IO请求入队</li>
+<li>当IO请求被已有请求合并(Front merge or Back merge)时</li>
+<li>当完成某个IO请求时</li>
+</ul>
+<p>在博文 <a href="http://bean-li.github.io/dive-into-iostat/" target="_blank" rel="noopener">http://bean-li.github.io/dive-into-iostat/</a>中有提到Merge时不会做IO统计函数，但是在kernel 4.4中可以到由blk_queue_bio()函数根据情况分别会调用attempt_front_merge()或attempt_back_merge()。</p>
+<p>每当发生关键IO事件；<strong>发起请求，完成请求，请求被合并</strong>时查看当前有几条正在执行的读请求IO或写请求IO，将此值乘以临近时间差就得出了系统当前处理IO时的总耗时。这与Little’ Law中通过面积来计算总耗时是一个道理，”绿色面积”中每当一个请求来的时候就上调一格，完成IO时就下调一格。在观察时间周期T内，以此方法来画出的绿色区域就是请求的总耗时时间。需要再次强调的关键概念是：</p>
+<ul>
+<li>系统同时可以有多个读请求</li>
+<li>系统同时可以有多个写请求</li>
+<li>读请求与写请求可以同时发生</li>
+</ul>
+<p>2：内核函数part_in_flight()中返回的IO数目也是读和写请求的总和。<br><img src="/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/part_in_flight.png"></p>
+<h2 id="如何获取平均服务时间？"><a href="#如何获取平均服务时间？" class="headerlink" title="如何获取平均服务时间？"></a>如何获取平均服务时间？</h2><p>Linux的/proc/diskstat中目前(4.4版本)只提供了处理完成的IO请求数量与IO等待时间，并没有提供请求入队的IO请求数量。在”性能分析中科特尔法则（Little’s Law）与其衍生法则的应用”也提到过Utilization law，是指当资源使用率不超过100%时可认为抵达率与完成率是一致的，这也意味着当资源使用率未达到100%时可以通过完成率替代抵达率以计算服务平均处理时间。iostat中用的方法也是利用了这一点，但本质上是Utilization law在发挥作用。如果遇到资源使用率达到性能拐点处时就已经不是job flow balance状态了（出现排队）。以严谨起见，最好是能获取到真正的请求入队数量，这样可以套用Little’s law计算出真正的平均服务时间。目前想到的唯一方法是通过修改内核代码以获取入队请求次数。</p>
+<blockquote>
+<p>W = L / λ </p>
+</blockquote>
+<p>补充：</p>
+<p>当谈到Disk IO的服务时间时注意区分两种情况：</p>
+<ul>
+<li>IO队列服务时间 = 磁盘忙于IO请求的时间 + IO请求在队列中等待时间</li>
+<li>磁盘IO服务时间 = 磁盘忙于IO请求的时间</li>
+</ul>
+<p>Little’s Law给出的平均服务时间是指IO队列服务时间，他是包括了队列中的等待时间。那实践中以哪个指标为主呢？我觉得是根据应用场景不同而不同，</p>
+<ul>
+<li>分析某个workload characterization 时会侧重看IO队列服务时间</li>
+<li>分析某个设备整体情况时会侧重看磁盘IO服务时间。基于Flash的存储设备出现严重的文件碎片化时此值会暴增。</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://bean-li.github.io/dive-into-iostat/" target="_blank" rel="noopener">http://bean-li.github.io/dive-into-iostat/</a></li>
+<li><a href="http://www.caveman.work/2018/05/20/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%B8%AD%E7%A7%91%E7%89%B9%E5%B0%94%E6%B3%95%E5%88%99%EF%BC%88Little-s-Law%EF%BC%89%E4%B8%8E%E5%85%B6%E8%A1%8D%E7%94%9F%E6%B3%95%E5%88%99%E7%9A%84%E5%BA%94%E7%94%A8/" target="_blank" rel="noopener">性能分析中科特尔法则（Little’s Law）与其衍生法则的应用</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/10/06/Android-UX-performance-check-list/" rel="next" title="Android UX performance check list">
+                <i class="fa fa-chevron-left"></i> Android UX performance check list
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/28/eBPF架构优势及其应用方向上的畅想/" rel="prev" title="eBPF架构优势及其应用方向上的畅想">
+                eBPF架构优势及其应用方向上的畅想 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#查看平均队列长度"><span class="nav-number">1.</span> <span class="nav-text">查看平均队列长度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#借用Little’s-Law的证明思路"><span class="nav-number">2.</span> <span class="nav-text">借用Little’s Law的证明思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何获取平均服务时间？"><span class="nav-number">3.</span> <span class="nav-text">如何获取平均服务时间？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

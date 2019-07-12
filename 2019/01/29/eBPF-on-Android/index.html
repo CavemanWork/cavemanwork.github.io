@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update 20190601 做些铺垫本文假设读者已掌握如下内容：  熟悉Linux内核编译方法。 阅读过博文eBPF架构优势及其应用方向上的畅想。 熟悉Git操作 熟悉CMake，LLVM，Clang等编译工具  在博文eBPF架构优势及其应用方向上的畅想中有提到eBPF的执行流程，这套在主机系统（泛指基于x86的Linux distribution）上直接apt install或者">
+<meta property="og:type" content="article">
+<meta property="og:title" content="eBPF on Android">
+<meta property="og:url" content="http://caveman.work/2019/01/29/eBPF-on-Android/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update 20190601 做些铺垫本文假设读者已掌握如下内容：  熟悉Linux内核编译方法。 阅读过博文eBPF架构优势及其应用方向上的畅想。 熟悉Git操作 熟悉CMake，LLVM，Clang等编译工具  在博文eBPF架构优势及其应用方向上的畅想中有提到eBPF的执行流程，这套在主机系统（泛指基于x86的Linux distribution）上直接apt install或者">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.991Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="eBPF on Android">
+<meta name="twitter:description" content="Last update 20190601 做些铺垫本文假设读者已掌握如下内容：  熟悉Linux内核编译方法。 阅读过博文eBPF架构优势及其应用方向上的畅想。 熟悉Git操作 熟悉CMake，LLVM，Clang等编译工具  在博文eBPF架构优势及其应用方向上的畅想中有提到eBPF的执行流程，这套在主机系统（泛指基于x86的Linux distribution）上直接apt install或者">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2019/01/29/eBPF-on-Android/"/>
+
+
+
+
+
+  <title>eBPF on Android | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2019/01/29/eBPF-on-Android/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">eBPF on Android</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-01-29T16:29:33+08:00">
+                2019-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update 20190601</em></p>
+<h2 id="做些铺垫"><a href="#做些铺垫" class="headerlink" title="做些铺垫"></a>做些铺垫</h2><p>本文假设读者已掌握如下内容：</p>
+<ol>
+<li>熟悉Linux内核编译方法。</li>
+<li>阅读过博文<a href="http://www.caveman.work/2019/01/28/eBPF%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8A%BF%E5%8F%8A%E5%85%B6%E5%BA%94%E7%94%A8%E6%96%B9%E5%90%91%E4%B8%8A%E7%9A%84%E7%95%85%E6%83%B3/" target="_blank" rel="noopener">eBPF架构优势及其应用方向上的畅想</a>。</li>
+<li>熟悉Git操作</li>
+<li>熟悉CMake，LLVM，Clang等编译工具</li>
+</ol>
+<p>在博文<a href="http://www.caveman.work/2019/01/28/eBPF%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8A%BF%E5%8F%8A%E5%85%B6%E5%BA%94%E7%94%A8%E6%96%B9%E5%90%91%E4%B8%8A%E7%9A%84%E7%95%85%E6%83%B3/" target="_blank" rel="noopener">eBPF架构优势及其应用方向上的畅想</a>中有提到eBPF的执行流程，这套在主机系统（泛指基于x86的Linux distribution）上直接apt install或者源码编译安装就可以了。但是在android上怎么执行呢？ 现在大部分android设备运行在基于arm的处理器架构上，我们熟悉的高通，MTK，华为海思都属于arm处理器架构。x86上的eBPF工具栈（如前文所述，这里仅指BCC&amp;BPFTrace）程序是无法直接在arm处理器上执行的，需要所谓的交叉编译技术才可以。除了程序本身之外，它所依赖的基础库如libc也同样需要交叉编译才能正确工作。</p>
+<h3 id="运行在android时的难题"><a href="#运行在android时的难题" class="headerlink" title="运行在android时的难题"></a>运行在android时的难题</h3><ol>
+<li>BCC及BPFTrace使用的是基于CMake的编译方式，与android使用的gradle，android BP的编译系统是不一致的。</li>
+<li>BCC项目中以python 包为基础，那意味着需要有python运行环境，这在anroid里也是没有的。</li>
+</ol>
+<h3 id="可行的思路"><a href="#可行的思路" class="headerlink" title="可行的思路"></a>可行的思路</h3><ol>
+<li>没条件就创造条件，将BCC&amp;BPFTrace强行适配到android编译环境，使其可以直接运行在android上下文中。中间涉及的依赖，冲突问题需要手动修改。</li>
+<li>添加中间层，由host端生成的的bytecode通过adb通道派发给client端，具体执行由client端的常驻进程完成。</li>
+<li>android端运行某个linux distribution环境（如Debian，Ubuntu），在手机端编译与安装BCC&amp;BPFTrace。</li>
+<li>参考BCC&amp;BPFTrace设计思路，依照android的架构实现一套类似功能程序，部分采用BCC&amp;BPFTrace项目代码。</li>
+</ol>
+<p>综合利弊之后，本文使用方案3。缺点就是对android的环境要求比较高，它需要：</p>
+<ol>
+<li>手机能够root，而且可以将data分区remount成可读写。</li>
+<li>android kernel 版本要求在4.9及以上。 </li>
+<li>具有编译android kernel的环境。</li>
+</ol>
+<h2 id="步骤1-编译带必要功能的内核"><a href="#步骤1-编译带必要功能的内核" class="headerlink" title="步骤1 编译带必要功能的内核"></a>步骤1 编译带必要功能的内核</h2><p>通过手动编内核实现以下两个目的：</p>
+<ul>
+<li>使能eBPF相关功能（如果已经开启可以跳过此步骤）。</li>
+<li>获取特定kernel的头文件。BCC会用到此头文件中的结构体来解析eBPF的返回数据。</li>
+</ul>
+<p>1：开启以下内核配置到项目_defconfig文件中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">CONFIG_BPF=y</span><br><span class="line">CONFIG_BPF_JIT=y</span><br><span class="line">CONFIG_HAVE_BPF_JIT=y</span><br><span class="line">CONFIG_BPF_EVENTS=y</span><br><span class="line">CONFIG_KPROBES=y</span><br><span class="line">CONFIG_KPROBE_EVENT=y</span><br><span class="line">CONFIG_UPROBES=y</span><br><span class="line">CONFIG_UPROBE_EVENT=y</span><br><span class="line">CONFIG_DEBUG_PREEMPT=y</span><br><span class="line">CONFIG_PREEMPTIRQ_EVENTS=y</span><br><span class="line">CONFIG_FTRACE_SYSCALLS=y</span><br></pre></td></tr></table></figure></p>
+<p>2：根据项目情况编译内核</p>
+<ul>
+<li>如果你有完整android项目代码的话可以make bootimage编译出内核</li>
+<li>否则配置好交叉编译环境后单独编译内核。</li>
+</ul>
+<p>关于获取Linux  kernel 头文件：</p>
+<ul>
+<li>如果你直接使用交叉编译环境来编译内核的话可以忽略这段内容。</li>
+<li>如果你的内核改动比较少，算是比较”干净”的话可以直接使用别人已经打包好的头文件包。不过这种情况比较少见，嵌入式的linux 内核基本被芯片厂或手机厂有所修改。</li>
+<li>如果你是用android树来编译内核的话，需要手动编译头文件因为android的打包结构并不保留头文件。编译方法如下：<ol>
+<li>cd to kernel tree </li>
+<li>export ARCH=arm64</li>
+<li>export CROSS_COMPILE=aarch64-linux-gnu- (任意交叉编译器都可以)</li>
+<li>make boardname_defconfig</li>
+<li>make -j6 </li>
+</ol>
+</li>
+</ul>
+<h2 id="步骤2-安装debian-arm到Android"><a href="#步骤2-安装debian-arm到Android" class="headerlink" title="步骤2 安装debian-arm到Android"></a>步骤2 安装debian-arm到Android</h2><p>Github有叫adeb项目，它的功能是将debian-arm整个固件push到android设备的/data目录下，然后并通过本地shell的配合实现了debian环境下shell。也就是debian能支持的功能他都能支持，只是没有屏幕，只能通过终端控制。当然也支持apt命令，通过修改源（apt source）之后下载安装社区提供的各种软件。</p>
+<ol>
+<li>首先下载adeb项目 git clone <a href="https://github.com/joelagnel/adeb.git" target="_blank" rel="noopener">https://github.com/joelagnel/adeb.git</a></li>
+<li>然后执行安装命令，此时需要手机已经是root，并且确保剩余空间至少大于300MB。adeb的其他命令具体参考reference guide，参考引用2。</li>
+<li>adeb prepare –full  –kernelsrc /path/to/kernel-source   // 步骤1中提及的kernel路径</li>
+<li>adeb shell </li>
+</ol>
+<p>即可进入到基于debian运行环境的shell。 他相比android区别在于只是利用了android中运行的linux kernel而其他标准库之类（bionic，linker等）都替换成debian所提供的libc及linker。安装过程及运行结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">$  adeb prepare --full --kernelsrc ./msm-4.9_valina_sdm845       </span><br><span class="line">|--------------|</span><br><span class="line">| adeb: v0.99g |</span><br><span class="line">|--------------|</span><br><span class="line">16:01:15 - INFO    : Looking for device..</span><br><span class="line">16:01:15 - INFO    : Preparing device...</span><br><span class="line">16:01:15 - INFO    : Doing a full install.</span><br><span class="line">16:01:15 - INFO    : </span><br><span class="line">16:01:15 - INFO    : Downloading Androdeb from the web...</span><br><span class="line">16:01:15 - INFO    : </span><br><span class="line">16:01:15 - INFO    : No repository URL provided in enviromnent. Attempting to auto-detect it</span><br><span class="line">16:01:15 - INFO    : Detected URL: github.com/joelagnel/adeb/</span><br><span class="line">  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</span><br><span class="line">                                 Dload  Upload   Total   Spent    Left  Speed</span><br><span class="line">100   610    0   610    0     0    589      0 --:--:--  0:00:01 --:--:--   589</span><br><span class="line">100  295M  100  295M    0     0   400k      0  0:12:36  0:12:36 --:--:--  541k</span><br><span class="line">Archive:  /tmp/tmp.A2epoY9AOr/androdeb-fs.tgz.zip</span><br><span class="line">  inflating: /tmp/tmp.A2epoY9AOr/androdeb-fs.tgz  </span><br><span class="line">16:01:53 - INFO    : Building and updating kernel headers from kernel source dir (./msm-4.9_valina_sdm845)</span><br><span class="line">16:01:58 - INFO    : Using archive at /tmp/tmp.A2epoY9AOr/androdeb-fs.tgz for filesystem preparation</span><br><span class="line">16:01:58 - INFO    : Pushing filesystem to device..</span><br><span class="line">16:01:09 - INFO    : Pushing addons to device..</span><br><span class="line">16:01:10 - INFO    : Unpacking filesystem in device..</span><br><span class="line">16:01:30 - INFO    : Storing kernel headers into androdeb /kernel-headers/</span><br><span class="line">16:01:57 - INFO    : All done! Run &quot;adeb shell&quot; to enter environment</span><br><span class="line"></span><br><span class="line">$  adeb shell </span><br><span class="line"></span><br><span class="line">##########################################################</span><br><span class="line"># Welcome to androdeb environment running on Android!    #</span><br><span class="line"># Questions to: Joel Fernandes &lt;joel@joelfernandes.org&gt;  #</span><br><span class="line">                                                         #</span><br><span class="line"> Try running vim, gcc, clang, bcc, git, make, perf etc   #</span><br><span class="line">   or apt-get install something.                         #</span><br><span class="line">##########################################################</span><br><span class="line"></span><br><span class="line">root@localhost:/#</span><br></pre></td></tr></table></figure>
+<p>AOSP项目源码仓库中的 <a href="https://android.googlesource.com/platform/external/adeb/" target="_blank" rel="noopener">external目录</a> 下面谷歌已经集成了adeb项目，如果有AOSP源码的话可以直接使用项目中的源码。这部分更新还未集成到Android P，应该是会随着Android Q一起发布。 </p>
+<h2 id="Hello-world"><a href="#Hello-world" class="headerlink" title="Hello world"></a>Hello world</h2><p>例1<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">root@localhost:/usr/share/bcc/tools# vfsstat </span><br><span class="line">TIME         READ/s  WRITE/s CREATE/s   OPEN/s  FSYNC/s</span><br><span class="line">08:45:23:        98      369        0        5        0</span><br><span class="line">08:45:24:       287      261        0      144        0</span><br><span class="line">08:45:25:       115      129        0       49        0</span><br><span class="line">08:45:26:       253      125        0       92        0</span><br><span class="line">08:45:27:       326      272        0       74        0</span><br><span class="line">08:45:28:       217      229        0       61        0</span><br></pre></td></tr></table></figure></p>
+<p>vfsstat(Virtual FileSystem Stats)可以查看下发到虚拟文件系统层的所有IO请求，如果看到以上结果就说明大功告成啦！过程中如果出现问题的话可以参考引用3。我自己遇到过kernel head不匹配与没有开启eBPF导致的错误。<br>预编译好的bcc工具集目录在 /usr/share/bcc/tools， 目前将近有100多个小工具。</p>
+<p>例2<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">root@localhost:/usr/share/bcc/tools# tcpdrop </span><br><span class="line">TIME     PID    IP SADDR:SPORT          &gt; DADDR:DPORT          STATE (FLAGS)</span><br><span class="line">08:54:36 3257   6  ::ffff:172.28.140.149:80 &gt; ::ffff:183.60.137.144:46922 ESTABLISHED (ACK)</span><br><span class="line">        tcp_drop+0x0</span><br><span class="line">        tcp_rcv_established+0x2d4</span><br><span class="line">        tcp_v4_do_rcv+0x198</span><br><span class="line">        tcp_v4_rcv+0xb54</span><br><span class="line">        ip_local_deliver_finish+0x10c</span><br><span class="line">        ip_local_deliver+0x108</span><br><span class="line">        ip_rcv_finish+0x168</span><br><span class="line">        ip_rcv+0x344</span><br><span class="line">        __netif_receive_skb_core+0x5a8</span><br><span class="line">        __netif_receive_skb+0x38</span><br><span class="line">        process_backlog+0xd0</span><br><span class="line">        net_rx_action+0x258</span><br><span class="line">        __softirqentry_text_start+0x15c</span><br><span class="line">        do_softirq+0x70</span><br><span class="line">        netif_rx_ni+0x80</span><br><span class="line">        hdd_rx_packet_cbk+0x438</span><br><span class="line">        $x+0x310</span><br><span class="line">        $x+0x1e8</span><br><span class="line">        kthread+0xf4</span><br><span class="line">        ret_from_fork+0x10</span><br></pre></td></tr></table></figure></p>
+<p>查看TCP 掉包时的内核路径以推测掉包原因（TCP 掉包路径非常多，只能打印堆栈来诊断了）。</p>
+<h2 id="步骤3（可选）-源码编译安装最新版BCC与BPFTrace"><a href="#步骤3（可选）-源码编译安装最新版BCC与BPFTrace" class="headerlink" title="步骤3（可选） 源码编译安装最新版BCC与BPFTrace"></a>步骤3（可选） 源码编译安装最新版BCC与BPFTrace</h2><p>默认的安装方式虽然简单但是所使用的工具版本比较老旧，为了体验最新功能可以下载最新代码并编译安装。需要提示的是<strong>以下操作都是在adeb shell中执行</strong>，也就是所有操作都在手机端完成，包括源码下载，编译与安装。</p>
+<h3 id="安装BCC"><a href="#安装BCC" class="headerlink" title="安装BCC"></a>安装BCC</h3><ol>
+<li>git clone <a href="https://github.com/iovisor/bcc.git" target="_blank" rel="noopener">https://github.com/iovisor/bcc.git</a>        // 下载bcc项目代码</li>
+<li>cd bcc &amp;&amp; rm -rf build &amp;&amp; mkdir -p build &amp;&amp; cd build        //在bcc目录下创建build目录，用于代码编译。</li>
+<li>export CC=clang-6.0        // 设置C编译器</li>
+<li>export CXX=clang++-6.0        //设置C++编译器</li>
+<li>cmake .. -DCMAKE_INSTALL_PREFIX=/usr        //运行环境检查</li>
+<li>make -j4        //编译</li>
+<li>make install        //安装</li>
+</ol>
+<p>安装后的tools路径为”/usr/share/bcc/tools”，运行cachestat检查下是否安装成功。</p>
+<p>可能出现的错误：<br>BCC 20190129版本中运行上面命令时会出现如下错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;/usr/share/bcc/tools/cachestat&quot;, line 20, in &lt;module&gt;</span><br><span class="line">    from bcc import BPF</span><br><span class="line">  File &quot;/usr/lib/python2.7/dist-packages/bcc/__init__.py&quot;, line 30, in &lt;module&gt;</span><br><span class="line">    from .syscall import syscall_name</span><br><span class="line">  File &quot;/usr/lib/python2.7/dist-packages/bcc/syscall.py&quot;, line 387, in &lt;module&gt;</span><br><span class="line">    raise Exception(&quot;ausyscall: command not found&quot;)</span><br><span class="line">Exception: ausyscall: command not found</span><br></pre></td></tr></table></figure></p>
+<p>解决方法：<br>安装auditd程序</p>
+<blockquote>
+<p>apt install auditd </p>
+</blockquote>
+<p>如果提示没有找到auditd命令的话，需要手动更新下source list。推荐将 “deb <a href="http://ftp.de.debian.org/debian" target="_blank" rel="noopener">http://ftp.de.debian.org/debian</a> stretch main” 添加到”/etc/apt/sources.list”文件后执行更新。</p>
+<blockquote>
+<p>apt update </p>
+</blockquote>
+<h3 id="安装-BPFTrace"><a href="#安装-BPFTrace" class="headerlink" title="安装 BPFTrace"></a>安装 BPFTrace</h3><ol>
+<li>git clone <a href="https://github.com/iovisor/bpftrace.git" target="_blank" rel="noopener">https://github.com/iovisor/bpftrace.git</a>        // 下载bpftrace项目代码</li>
+<li>cd bpftrace &amp;&amp; rm -rf build &amp;&amp; mkdir -p build &amp;&amp; cd build        //在bpftrace目录下创建build目录，用于代码编译。</li>
+<li>export CC=clang-6.0        // 设置C编译器</li>
+<li>export CXX=clang++-6.0        //设置C++编译器</li>
+<li>cmake -DCMAKE_BUILD_TYPE=Debug ../        //运行环境检查</li>
+<li>make -j4        //编译</li>
+<li>make install        //安装</li>
+</ol>
+<p>可能出现的错误1：<br>无法找到”BPF_FUNC_get_current_cgroup_id”定义！</p>
+<p>错误原因是我用的4.9内核中还没有这个定义，是commit 22110ad25b51b0e1f1ece4fcdf21a3738391f018中引入的功能。如果你的内核也是4.9，或者提示没有定义的话可以单笔回退这个提交。</p>
+<blockquote>
+<p>git revert 22110ad25b51b0e1f1ece4fcdf21a3738391f018</p>
+</blockquote>
+<p>可能出现的错误2：<br>无法找到”bpf_create_map”，是否使用”bcc_create<em>map”替代？<br>这是因为bpftrace依赖bcc的库函数，而这个库函数中使用的是bcc开头。规避办法是将bpf</em>相关调用修改成bcc_，修改如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">diff --git a/src/attached_probe.cpp b/src/attached_probe.cpp</span><br><span class="line">index 1837b6a..de9c6e0 100644</span><br><span class="line">--- a/src/attached_probe.cpp</span><br><span class="line">+++ b/src/attached_probe.cpp</span><br><span class="line">@@ -331,7 +331,7 @@ void AttachedProbe::load_prog()</span><br><span class="line">   for (int attempt=0; attempt&lt;3; attempt++)</span><br><span class="line">   &#123;</span><br><span class="line">-    progfd_ = bpf_prog_load(progtype(probe_.type), namep,</span><br><span class="line">+    progfd_ = bcc_prog_load(progtype(probe_.type), namep,</span><br><span class="line">         reinterpret_cast&lt;struct bpf_insn*&gt;(insns), prog_len, license,</span><br><span class="line">         kernel_version(attempt), log_level, log_buf, log_buf_size);</span><br><span class="line">     if (progfd_ &gt;= 0)</span><br><span class="line">diff --git a/src/map.cpp b/src/map.cpp</span><br><span class="line">index 5cfd442..6a452b4 100644</span><br><span class="line">--- a/src/map.cpp</span><br><span class="line">+++ b/src/map.cpp</span><br><span class="line">@@ -46,7 +46,7 @@ Map::Map(const std::string &amp;name, const SizedType &amp;type, const MapKey &amp;key, int</span><br><span class="line">   int value_size = type.size;</span><br><span class="line">   int flags = 0;</span><br><span class="line">-  mapfd_ = bpf_create_map(map_type, name.c_str(), key_size, value_size, max_entries, flags);</span><br><span class="line">+  mapfd_ = bcc_create_map(map_type, name.c_str(), key_size, value_size, max_entries, flags);</span><br><span class="line">   if (mapfd_ &lt; 0)</span><br><span class="line">   &#123;</span><br><span class="line">     std::cerr &lt;&lt; &quot;Error creating map: &apos;&quot; &lt;&lt; name_ &lt;&lt; &quot;&apos;&quot; &lt;&lt; std::endl;</span><br><span class="line">@@ -80,7 +80,7 @@ Map::Map(enum bpf_map_type map_type)</span><br><span class="line">     std::cerr &lt;&lt; &quot;invalid map type&quot; &lt;&lt; std::endl;</span><br><span class="line">     abort();</span><br><span class="line">   &#125;</span><br><span class="line">-  mapfd_ = bpf_create_map(map_type, name.c_str(), key_size, value_size, max_entries, flags);</span><br><span class="line">+  mapfd_ = bcc_create_map(map_type, name.c_str(), key_size, value_size, max_entries, flags);</span><br><span class="line">   if (mapfd_ &lt; 0)</span><br><span class="line">   &#123;</span><br></pre></td></tr></table></figure></p>
+<p>安装后的tools路径为”/usr/local/share/bpftrace/tools”，运行如下命令验证安装结果：</p>
+<blockquote>
+<p>bpftrace -e ‘kprobe:do_nanosleep { printf(“PID %d sleeping…\n”, pid); }’</p>
+</blockquote>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><ul>
+<li>本文介绍的方法适用于系统开发阶段，因为有了debian，所以只要能找到源或者代码，几乎可以执行任何linux 发行版上的工具。</li>
+<li>后面会陆续介绍其他比较重要的工具（Perf，glances，pidstat，stress等），目前计划还是基于debian的方案。</li>
+<li>用户固件中不可能会有这套debian的程序，因为他需要root运行，这是最大的缺点。个人比较认同的方案是4，也就是实现适合用于android 环境的类似BCC&amp;BPFTrace工具链，目标是用户固件中也可指直接使用eBPF。</li>
+</ul>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ol>
+<li>“eBPF super powers on ARM64 and Android.pdf” by Joel Fernandes</li>
+<li><a href="https://github.com/joelagnel/adeb/blob/master/README.md" target="_blank" rel="noopener">https://github.com/joelagnel/adeb/blob/master/README.md</a></li>
+<li><a href="https://github.com/joelagnel/adeb/blob/master/BCC.md" target="_blank" rel="noopener">https://github.com/joelagnel/adeb/blob/master/BCC.md</a></li>
+<li><a href="https://github.com/iovisor/bcc#tools" target="_blank" rel="noopener">https://github.com/iovisor/bcc#tools</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/28/eBPF架构优势及其应用方向上的畅想/" rel="next" title="eBPF架构优势及其应用方向上的畅想">
+                <i class="fa fa-chevron-left"></i> eBPF架构优势及其应用方向上的畅想
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/01/Data-science-for-mobile-OS-system-optimization/" rel="prev" title="Data science for mobile OS system optimization">
+                Data science for mobile OS system optimization <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#做些铺垫"><span class="nav-number">1.</span> <span class="nav-text">做些铺垫</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运行在android时的难题"><span class="nav-number">1.1.</span> <span class="nav-text">运行在android时的难题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可行的思路"><span class="nav-number">1.2.</span> <span class="nav-text">可行的思路</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#步骤1-编译带必要功能的内核"><span class="nav-number">2.</span> <span class="nav-text">步骤1 编译带必要功能的内核</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#步骤2-安装debian-arm到Android"><span class="nav-number">3.</span> <span class="nav-text">步骤2 安装debian-arm到Android</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hello-world"><span class="nav-number">4.</span> <span class="nav-text">Hello world</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#步骤3（可选）-源码编译安装最新版BCC与BPFTrace"><span class="nav-number">5.</span> <span class="nav-text">步骤3（可选） 源码编译安装最新版BCC与BPFTrace</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装BCC"><span class="nav-number">5.1.</span> <span class="nav-text">安装BCC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装-BPFTrace"><span class="nav-number">5.2.</span> <span class="nav-text">安装 BPFTrace</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#写在最后"><span class="nav-number">6.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Reference"><span class="nav-number">7.</span> <span class="nav-text">Reference</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

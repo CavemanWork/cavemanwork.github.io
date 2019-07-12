@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update: 20190601 基本概念进行性能测试与分析时首先需要确认的是：  性能指标 (Performance Metric) 性能数据表达 (Perforamcne Data Presentation)  假设我们想分析一段时间内CPU使用量的情况，这个过程称为数据集中趋势的分析。使用最广范计算起来也非常简单的是平均值计算也称呼为 算术平均值。数学表达式为：$$\overlin">
+<meta property="og:type" content="article">
+<meta property="og:title" content="性能数据分析时常用的统计方法">
+<meta property="og:url" content="http://caveman.work/2018/01/18/CavemanWork-Insighter中用到的平均值指标/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update: 20190601 基本概念进行性能测试与分析时首先需要确认的是：  性能指标 (Performance Metric) 性能数据表达 (Perforamcne Data Presentation)  假设我们想分析一段时间内CPU使用量的情况，这个过程称为数据集中趋势的分析。使用最广范计算起来也非常简单的是平均值计算也称呼为 算术平均值。数学表达式为：$$\overlin">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.988Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="性能数据分析时常用的统计方法">
+<meta name="twitter:description" content="Last update: 20190601 基本概念进行性能测试与分析时首先需要确认的是：  性能指标 (Performance Metric) 性能数据表达 (Perforamcne Data Presentation)  假设我们想分析一段时间内CPU使用量的情况，这个过程称为数据集中趋势的分析。使用最广范计算起来也非常简单的是平均值计算也称呼为 算术平均值。数学表达式为：$$\overlin">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2018/01/18/CavemanWork-Insighter中用到的平均值指标/"/>
+
+
+
+
+
+  <title>性能数据分析时常用的统计方法 | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2018/01/18/CavemanWork-Insighter中用到的平均值指标/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">性能数据分析时常用的统计方法</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-01-18T19:21:39+08:00">
+                2018-01-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update: 20190601</em></p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>进行性能测试与分析时首先需要确认的是：</p>
+<ul>
+<li>性能指标 (Performance Metric)</li>
+<li>性能数据表达 (Perforamcne Data Presentation)</li>
+</ul>
+<p>假设我们想分析一段时间内CPU使用量的情况，这个过程称为<strong>数据集中趋势</strong>的分析。使用最广范计算起来也非常简单的是平均值计算也称呼为 <strong>算术平均值</strong>。<br>数学表达式为：<br>$$\overline {X}=\dfrac {\sum ^{n}_{i=1}x_{i}}{n}=\dfrac {x_{1}+x_{2}+\ldots x_{n}}{n}$$<br>即，将总和除以样本数量。</p>
+<p>这种表达方式(数据集中趋势)简单易懂并普遍应用在各个领域但它在分析性能数据时有个致命缺点：<br><strong>最终结果受样本中异常值的影响非常大</strong></p>
+<p>想象一下在一段时间内CPU都处于idle状态，但某时刻CPU使用量突然飙升并持续了两秒钟。计算这段时间内CPU使用量时峰值会被平均化并随着观察时间的变长其被平均化的程度更厉害。<br>在CPU飙升的两秒钟发生了事什么谁也不敢保证，最不希望看到的情况是用户发起的操作因CPU无法及时响应被阻塞在队列中。<br>经验上来看没有一个公式可以直接套用在各个场合中，所以以平均值表示数据集中趋势的方法也需要分场景使用。</p>
+<h1 id="数据离散性与分布性"><a href="#数据离散性与分布性" class="headerlink" title="数据离散性与分布性"></a>数据离散性与分布性</h1><p>在实践中我们需要量化一组样本以表示这一组样本的数据特性。<br>数据特性根据分析角度不同其计算方法也不尽相同。</p>
+<h1 id="样本数据间的离散性"><a href="#样本数据间的离散性" class="headerlink" title="样本数据间的离散性"></a>样本数据间的离散性</h1><p><strong>标准差 Standard Deviation, SD</strong><br><strong>概念：</strong> 国家计量技术规范里的全称是“标准偏差”，用于量化样本与样本平均值间的远近程度。<br>一个较大的标准差意味着样本与其样本平均值间的差异较大，一个较小的标准差意味着样本与其样本平均值间的差异较小。</p>
+<ul>
+<li>总体标准差：$$SD=\sqrt {\dfrac {1}{N}\sum ^{N}_{i=1}\left( x_{i}-\mu \right) ^{2}}$$</li>
+<li>样本标准差：从总体中抽样得出样本，对其样本计算标准差来估摸整体标准差的方式。为了更接近总体标准差，经验上将样本数量减一。<br>$$SD=\sqrt {\dfrac {1}{N-1}\sum ^{N}_{i=1}\left( x_{i}-\mu \right) ^{2}}$$<br><strong>适用场景：</strong> 用于描述样本中的数据离算术平均值的差异程度，其值越大越说明数据分散性较大。<br>以应用计算启动速度为例，如果分散性较大则说明启动流程中干扰因素较多，用户所能感受到的表现不够一致（启动速度时快时慢）。 在系统调优/应用优化时需要优化两个数据指标：</li>
+<li>启动速度的稳定性（降低样本标准差）</li>
+<li>启动速度本身（降低样本算术平均值）</li>
+</ul>
+<p><strong>标准误 Standard Error of Mean, SE</strong><br><strong>概念：</strong> 用于描述对总体进行 <strong>不同采样数据间的离散性</strong>。此概念容易与标准差混淆，两者区别是：</p>
+<ul>
+<li>标准差：单次采样中数据间的离散性</li>
+<li>标准误：多次采样中不同样本集的平均值间的离散性</li>
+</ul>
+<p><strong>适用场景：</strong> 为了更完整的描述系统/应用性能稳定性，可以进行多次采样并计算其标准误。标准误越小越说明性能稳定，反之亦然。</p>
+<p><strong>变异(离散)系数 Coefficient of Variation</strong><br><strong>概念：</strong> 是概率分布离散程度的一个归一化量度，其定义为标准差与平均值之比。<br>比起标准差来，变异系数的好处是不需要参照数据的平均值。变异系数是一个无量纲量，因此在比较两组量纲不同或均值不同的数据时，应该用变异系数而不是标准差来作为比较的参考。</p>
+<p><strong>适用场景：</strong> 当衡量不同系统间的平均数差距时用到变异系数，还有一种系数称为标准分（Standard Score）用于量化同个系统中不同样本离变异系数间的差距。</p>
+<h1 id="样本数据间分布"><a href="#样本数据间分布" class="headerlink" title="样本数据间分布"></a>样本数据间分布</h1><p><strong>算数平均 Arithmetic mean</strong>: 最简单且最常用的数据集中趋势量化方法，单独使用算是平均值量化数据的情况比较少。</p>
+<p><strong>加权平均 Weighted mean</strong>: 计算LoadAverage时用到此指标，将时间远近变量以权重的形式赋予不同样本。</p>
+<p><strong>调和平均 Harmonic mean</strong>: 假设一个链路由不同处理速度的子部件组成，计算其平均处理速度时采用此指标。</p>
+<p><strong>几何平均 Geometric mean</strong>: 当样本的scale为单位不同时几何平均值相比算数平均值更合理。<br>在量化系统整体性能提升时会采用几何平均值因为收集的参数可能是响应速度，队列长度，CPU使用量等不同维度的数据（每个指标的scale各不相同）。</p>
+<p><strong>百分位数 Percentile</strong>: 对用户影响最大的是异常值，通过百分位数获知异常分布情况。<br>响应速度的75百分位数为：50ms。 表示采样到的数据中75%的数值小于50，这个指标可以用于指导优化目标KPI。</p>
+<p><strong>中位数 Median</strong>: 游戏性能衡量指标FPS Stability中，采用了中位数计算界面刷新的稳定度。</p>
+<h1 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h1><ul>
+<li>本文介绍的内容是统计分析中的冰山一角但却是最基本，也是最常用的知识点。更高级的统计分析方法需要通过系统化的学习才能掌握。</li>
+<li>抓取了准确的性能指标数据的前提下只有使用了正确的数据分析方法其结果才具有现实意义。此两条是最基本的前置条件<strong>但往往也最容易忽略</strong>。如果事先明确这两点，可以避免不必要的试错时间。</li>
+<li>关于启动速度衡量方法请参考：<a href="http://www.caveman.work/2018/01/18/CavemanWork-Insighter%E4%B8%AD%E7%94%A8%E5%88%B0%E7%9A%84%E5%B9%B3%E5%9D%87%E5%80%BC%E6%8C%87%E6%A0%87/" target="_blank" rel="noopener">使用置信区间量化应用程序启动时间</a>。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/18/CavemeWork-Analyzer中响应时间的表示方式/" rel="prev" title="使用置信区间量化应用程序启动时间">
+                使用置信区间量化应用程序启动时间 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基本概念"><span class="nav-number">1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据离散性与分布性"><span class="nav-number">2.</span> <span class="nav-text">数据离散性与分布性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#样本数据间的离散性"><span class="nav-number">3.</span> <span class="nav-text">样本数据间的离散性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#样本数据间分布"><span class="nav-number">4.</span> <span class="nav-text">样本数据间分布</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#写在最后"><span class="nav-number">5.</span> <span class="nav-text">写在最后</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

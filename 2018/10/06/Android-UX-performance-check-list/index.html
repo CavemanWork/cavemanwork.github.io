@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/cw-215x215-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/cw-32x32-20180526.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cw-16x16-20180526.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Last update 20181006 UX性能检查清单Android设备的用户体验性能包括：  界面流畅度优化 游戏类应用 普通用户交互类应用 如：社交APP，购物APP   界面响应速度 更多场景待补充  本文通过系统化的检查清单，以流程化的方式排查UX性能问题。随着对系统认识的加深与改变，清单内容也会跟着改变。 首先，我们将Android系统以如下方式划分： 将整个栈分为5层，4层软件+1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android UX performance check list">
+<meta property="og:url" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/index.html">
+<meta property="og:site_name" content="Caveman.Work Blog">
+<meta property="og:description" content="Last update 20181006 UX性能检查清单Android设备的用户体验性能包括：  界面流畅度优化 游戏类应用 普通用户交互类应用 如：社交APP，购物APP   界面响应速度 更多场景待补充  本文通过系统化的检查清单，以流程化的方式排查UX性能问题。随着对系统认识的加深与改变，清单内容也会跟着改变。 首先，我们将Android系统以如下方式划分： 将整个栈分为5层，4层软件+1">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/Stack.png">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/Application.png">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/Frameworks.png">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/CoreServices.png">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/LinuxKernel.png">
+<meta property="og:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/Chips.png">
+<meta property="og:updated_time" content="2019-06-23T08:51:43.986Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android UX performance check list">
+<meta name="twitter:description" content="Last update 20181006 UX性能检查清单Android设备的用户体验性能包括：  界面流畅度优化 游戏类应用 普通用户交互类应用 如：社交APP，购物APP   界面响应速度 更多场景待补充  本文通过系统化的检查清单，以流程化的方式排查UX性能问题。随着对系统认识的加深与改变，清单内容也会跟着改变。 首先，我们将Android系统以如下方式划分： 将整个栈分为5层，4层软件+1">
+<meta name="twitter:image" content="http://caveman.work/2018/10/06/Android-UX-performance-check-list/Stack.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://caveman.work/2018/10/06/Android-UX-performance-check-list/"/>
+
+
+
+
+
+  <title>Android UX performance check list | Caveman.Work Blog</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?8a854e3b5b79b6cde354ce85895c1ffb";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">Caveman.Work Blog</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Blog
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+            Contact
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://caveman.work/2018/10/06/Android-UX-performance-check-list/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caveman.Work">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caveman.Work Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android UX performance check list</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-10-06T17:27:53+08:00">
+                2018-10-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><em>Last update 20181006</em></p>
+<h1 id="UX性能检查清单"><a href="#UX性能检查清单" class="headerlink" title="UX性能检查清单"></a>UX性能检查清单</h1><p>Android设备的用户体验性能包括：</p>
+<ul>
+<li>界面流畅度优化<ul>
+<li>游戏类应用</li>
+<li>普通用户交互类应用 如：社交APP，购物APP</li>
+</ul>
+</li>
+<li>界面响应速度</li>
+<li>更多场景待补充</li>
+</ul>
+<p>本文通过系统化的检查清单，以流程化的方式排查UX性能问题。<strong>随着对系统认识的加深与改变，清单内容也会跟着改变。</strong></p>
+<p>首先，我们将Android系统以如下方式划分：<br><img src="/2018/10/06/Android-UX-performance-check-list/Stack.png"></p>
+<p>将整个栈分为5层，4层软件+1层硬件。每一层由<strong>排查方向(Orientation)</strong>与<strong>排查工具(Diagnose Tools)</strong>组成。检查清单的作用在于以流程化的方式避免了不必要的时间浪费，清单方法看起来比较慢（或者”笨”），但在实际中它是最快，最完整的问题解决方法。所以本文注意力将放在清单的完备性上，与具体模块相关的内容（排查方向与工具使用）将在后续的文章中做详细介绍。</p>
+<p>清单说明：</p>
+<ul>
+<li>Application与Frameworks是运行在应用程序上下文中。</li>
+<li>Core Services是指Android关键服务，它配合LinuxKernel支持Android应用程序的运行。</li>
+<li>检查顺序是从<strong>层1 Application 开始</strong>，按编号顺序检查。</li>
+</ul>
+<h1 id="层1-Application"><a href="#层1-Application" class="headerlink" title="[层1 Application]"></a>[层1 Application]</h1><img src="/2018/10/06/Android-UX-performance-check-list/Application.png">
+<h1 id="层2-Frameworks"><a href="#层2-Frameworks" class="headerlink" title="[层2 Frameworks]"></a>[层2 Frameworks]</h1><img src="/2018/10/06/Android-UX-performance-check-list/Frameworks.png">
+<h1 id="层3-Core-services"><a href="#层3-Core-services" class="headerlink" title="[层3 Core services]"></a>[层3 Core services]</h1><img src="/2018/10/06/Android-UX-performance-check-list/CoreServices.png">
+<h1 id="层4-Linux-kernel"><a href="#层4-Linux-kernel" class="headerlink" title="[层4 Linux kernel]"></a>[层4 Linux kernel]</h1><img src="/2018/10/06/Android-UX-performance-check-list/LinuxKernel.png">
+<h1 id="层5-Chips"><a href="#层5-Chips" class="headerlink" title="[层5 Chips]"></a>[层5 Chips]</h1><img src="/2018/10/06/Android-UX-performance-check-list/Chips.png">
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/17/CorrelationAnalysis/" rel="next" title="TimeSeries关联性分析的应用">
+                <i class="fa fa-chevron-left"></i> TimeSeries关联性分析的应用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/13/以Little-s-Law角度解读iostat输出的avgqu-sz-平均队列长度/" rel="prev" title="以Little's Law角度解读iostat输出的avgqu-sz(平均队列长度)">
+                以Little's Law角度解读iostat输出的avgqu-sz(平均队列长度) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caveman.Work</p>
+              <p class="site-description motion-element" itemprop="description">Life is fantanstic!</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#UX性能检查清单"><span class="nav-number">1.</span> <span class="nav-text">UX性能检查清单</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层1-Application"><span class="nav-number">2.</span> <span class="nav-text">[层1 Application]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层2-Frameworks"><span class="nav-number">3.</span> <span class="nav-text">[层2 Frameworks]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层3-Core-services"><span class="nav-number">4.</span> <span class="nav-text">[层3 Core services]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层4-Linux-kernel"><span class="nav-number">5.</span> <span class="nav-text">[层4 Linux kernel]</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层5-Chips"><span class="nav-number">6.</span> <span class="nav-text">[层5 Chips]</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caveman.Work</span>
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>
